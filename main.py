@@ -29,10 +29,10 @@ HEADERS = {
 
 def get_rendered_text(url):
     with sync_playwright() as p:
-        browser = p.chromium.launch(
-                        headless=True,
-                        args=["--no-sandbox", "--disable-setuid-sandbox"]
-                  )
+       browser = p.chromium.launch(
+                    headless=True,
+                    args=["--no-sandbox", "--disable-setuid-sandbox"]
+                )
         page = browser.new_page()
         page.goto(url, wait_until="networkidle")
         text = page.inner_text("body")
