@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 from bs4 import BeautifulSoup
-import trafilatura
 import re
 from collections import Counter
 from urllib.parse import urljoin
@@ -49,11 +48,11 @@ def analyze(data: RequestData):
             html = res.text
             soup = BeautifulSoup(html, "html.parser")
 
-        # 본문 추출
-        text = trafilatura.extract(html) or ""
+        # 본문 추출 (메모장 기준과 최대한 유사)
+        text = soup.get_text(" ", strip=True)
 
         # 전체 페이지 텍스트
-        visible_text = soup.get_text(" ", strip=True)
+        visible_text = text
 
         # 이미지 개수
         image_count = len(soup.find_all("img"))
@@ -82,16 +81,15 @@ def analyze(data: RequestData):
         keyword_count_page = 0
 
         if data.keyword:
-            pattern = rf'\b{re.escape(data.keyword.lower())}\b'
-            keyword_count_body = len(re.findall(pattern, text.lower()))
-            keyword_count_page = len(re.findall(pattern, visible_text.lower()))
+            keyword = data.keyword.lower().strip()
+            keyword_count_body = text.lower().count(keyword)
+            keyword_count_page = visible_text.lower().count(keyword)
 
         # 상위 단어
         common_words = Counter(words).most_common(10)
 
         return {
             "title": title,
-            "text": text,
             "char_count": char_count,
             "char_no_space": char_no_space,
             "word_count": word_count,
@@ -103,7 +101,7 @@ def analyze(data: RequestData):
             "keyword_count_body": keyword_count_body,
             "keyword_count_page": keyword_count_page,
             "common_words": common_words,
-            "preview": text[:300]
+            "preview": text[:500]
         }
 
     except Exception as e:
