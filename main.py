@@ -91,6 +91,7 @@ def analyze(data: RequestData):
 
         return {
             "title": title,
+            "text": text,
             "char_count": char_count,
             "char_no_space": char_no_space,
             "word_count": word_count,
