@@ -33,12 +33,14 @@ def root():
 @app.post("/analyze")
 def analyze(data: RequestData):
     try:
+        # URL 요청
         res = requests.get(data.url, headers=HEADERS, timeout=10)
         res.raise_for_status()
         html = res.text
 
         soup = BeautifulSoup(html, "html.parser")
 
+        # 네이버 블로그 iframe 처리
         iframe = soup.find("iframe", id="mainFrame")
         if iframe and iframe.get("src"):
             iframe_url = urljoin(data.url, iframe["src"])
@@ -47,32 +49,44 @@ def analyze(data: RequestData):
             html = res.text
             soup = BeautifulSoup(html, "html.parser")
 
+        # 본문 추출
         text = trafilatura.extract(html) or ""
+
+        # 전체 페이지 텍스트
         visible_text = soup.get_text(" ", strip=True)
 
+        # 이미지 개수
         image_count = len(soup.find_all("img"))
+
+        # 링크 개수
         link_count = len(soup.find_all("a"))
 
+        # 제목
         title = soup.title.string.strip() if soup.title else ""
 
+        # 헤딩 태그 개수
         h1_count = len(soup.find_all("h1"))
         h2_count = len(soup.find_all("h2"))
         h3_count = len(soup.find_all("h3"))
 
+        # 글자수
         char_count = len(text)
         char_no_space = len(text.replace(" ", ""))
 
-        words = re.findall(r'\\w+', text.lower())
+        # 단어 수
+        words = re.findall(r'\w+', text.lower())
         word_count = len(words)
 
+        # 키워드 카운트
         keyword_count_body = 0
         keyword_count_page = 0
 
         if data.keyword:
-            pattern = rf'\\b{re.escape(data.keyword.lower())}\\b'
+            pattern = rf'\b{re.escape(data.keyword.lower())}\b'
             keyword_count_body = len(re.findall(pattern, text.lower()))
             keyword_count_page = len(re.findall(pattern, visible_text.lower()))
 
+        # 상위 단어
         common_words = Counter(words).most_common(10)
 
         return {
